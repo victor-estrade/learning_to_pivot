@@ -219,7 +219,8 @@ class PivotClassifier(Pivot):
 
     def predict_proba(self, X):
         X = to_numpy(X)
-        X = self.scaler.transform(X)
+        if self.scaler is not None :
+            X = self.scaler.transform(X)
         proba = self._predict_proba(X)
         return proba
 
@@ -234,3 +235,16 @@ class PivotClassifier(Pivot):
             y_proba.extend(proba_batch)
         y_proba = np.array(y_proba)
         return y_proba
+
+
+
+
+class PivotRegressor(Pivot):
+    # TODO
+
+    def predict(self, X):
+        X = to_numpy(X)
+        if self.scaler is not None :
+            X = self.scaler.transform(X)
+        # TODO : extract regressed
+        return None
