@@ -13,7 +13,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-
 from config import OUT_DIRECTORY
 
 from toys import Generator
@@ -25,7 +24,9 @@ set_logger()
 from pivot import PivotClassifier
 from pivot import PivotBinaryClassifier
 from archi import F3Classifier
-from archi import F3Regressor
+from archi import F3GausianMixtureDensity
+
+from criterion import ADVLoss
 
 from evaluation import evaluate_classifier
 from evaluation import evaluate_neural_net
@@ -34,7 +35,7 @@ from evaluation import evaluate_pivotal
 SEED = 42
 N_CV_ITER = 3
 TRADE_OFF = 50.0
-DIRECTORY = os.path.join(OUT_DIRECTORY, f"pivot-{TRADE_OFF}")
+DIRECTORY = os.path.join(OUT_DIRECTORY, f"pivot_mdn-{TRADE_OFF}")
 
 def main():
     print("hello world")
@@ -69,18 +70,19 @@ def run(i_cv):
 
     # Define Pivot
     net = F3Classifier(n_in=2, n_out=1)
-    adv_net = F3Regressor(n_in=1, n_out=1)
+    adv_net = F3GausianMixtureDensity(n_in=1, n_components=5)
     # net_criterion = nn.CrossEntropyLoss()
     net_criterion = nn.BCEWithLogitsLoss()
-    adv_criterion = nn.MSELoss()
-
+    adv_criterion = ADVLoss()
+    
     # ADAM
-    net_optimizer = optim.Adam(net.parameters(), lr=1e-3)
-    adv_optimizer = optim.Adam(adv_net.parameters(), lr=1e-3)
+    # net_optimizer = optim.Adam(net.parameters(), lr=1e-3, betas=(0.5, 0.9))
+    # adv_optimizer = optim.Adam(adv_net.parameters(), lr=1e-3, betas=(0.5, 0.9))
     # SGD
-    # net_optimizer = optim.SGD(net.parameters(), lr=1e-3)
-    # adv_optimizer = optim.SGD(adv_net.parameters(), lr=1e-3)
+    net_optimizer = optim.SGD(net.parameters(), lr=1e-3)
+    adv_optimizer = optim.SGD(adv_net.parameters(), lr=1e-3)
 
+    # model = PivotClassifier(net, adv_net, net_criterion, adv_criterion, TRADE_OFF, net_optimizer, adv_optimizer,
     model = PivotBinaryClassifier(net, adv_net, net_criterion, adv_criterion, TRADE_OFF, net_optimizer, adv_optimizer,
                 n_net_pre_training_steps=1000, n_adv_pre_training_steps=1000,
                 n_steps=2000, n_recovery_steps=1,

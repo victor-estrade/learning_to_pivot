@@ -13,11 +13,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-from sklearn.ensemble import GradientBoostingClassifier
-
 from config import OUT_DIRECTORY
 
 from toys import Generator
@@ -26,6 +21,7 @@ set_plot_config()
 from utils import set_logger
 set_logger()
 from pivot import PivotClassifier
+from pivot import PivotBinaryClassifier
 from archi import F3Classifier
 from archi import F3Regressor
 from archi import F3GausianMixtureDensity
@@ -71,20 +67,19 @@ def run(i_cv):
     z_train = np.concatenate((np.zeros(N_BKG), z_train), axis=0)
 
     # Define Pivot
-    net = F3Classifier(n_in=2, n_out=2)
-    adv_net = F3Regressor(n_in=2, n_out=1)
-    net_criterion = nn.CrossEntropyLoss()
+    net = F3Classifier(n_in=2, n_out=1)
+    adv_net = F3Regressor(n_in=1, n_out=1)
+    # net_criterion = nn.CrossEntropyLoss()
+    net_criterion = nn.BCEWithLogitsLoss()
     adv_criterion = nn.MSELoss()
     # ADAM
     net_optimizer = optim.Adam(net.parameters(), lr=1e-3)
     adv_optimizer = optim.Adam(adv_net.parameters(), lr=1e-3)
-    combined_optimizer = optim.Adam(list(net.parameters()) + list(adv_net.parameters()), lr=1e-3)
     # SGD
     # net_optimizer = optim.SGD(net.parameters(), lr=1e-3)
     # adv_optimizer = optim.SGD(adv_net.parameters(), lr=1e-3)
-    # combined_optimizer = optim.SGD(list(net.parameters()) + list(adv_net.parameters()), lr=1e-3)
 
-    model = PivotClassifier(net, adv_net, net_criterion, adv_criterion, TRADE_OFF, net_optimizer, adv_optimizer, combined_optimizer,
+    model = PivotBinaryClassifier(net, adv_net, net_criterion, adv_criterion, TRADE_OFF, net_optimizer, adv_optimizer,
                 n_net_pre_training_steps=1000, n_adv_pre_training_steps=0,
                 n_steps=0, n_recovery_steps=0,
                 batch_size=128, rescale=True, cuda=False, verbose=0)
@@ -100,12 +95,12 @@ def run(i_cv):
     # Evaluation
     r = evaluate_neural_net(model, prefix='train', model_name=model_name, directory=directory)
     results.update(r)    
+    evaluate_pivotal(model, generator, prefix='test', model_name=model_name, directory=directory)
+
     r = evaluate_classifier(model, X_train, y_train, prefix='train', model_name=model_name, directory=directory)
     results.update(r)
     r = evaluate_classifier(model, X_test, y_test, prefix='test', model_name=model_name, directory=directory)
     results.update(r)
-    
-    evaluate_pivotal(model, generator, prefix='test', model_name=model_name, directory=directory)
 
     return results
 
