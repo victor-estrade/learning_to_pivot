@@ -27,6 +27,6 @@ To run an experiment from root dir :
 
 # TODO
 
-Use a mixture density network with 5 gaussians like in the notebook :
-https://github.com/glouppe/paper-learning-to-pivot/blob/master/code/Toy.ipynb
-
+- Use a mixture density network with 5 gaussians like in the notebook :
+	https://github.com/glouppe/paper-learning-to-pivot/blob/master/code/Toy.ipynb
+- Use same hyper-parameters as in the paper
