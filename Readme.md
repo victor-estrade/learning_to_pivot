@@ -33,7 +33,7 @@ Results are saved in the `output` directory
 Using a mixture density network with 5 gaussians as adversarials leads to NaN during testing.
 Did not figured out why/how.
 
-A simple Mean square error regressor is used instead for stability.
+A simpler Mean square error regressor is used instead for stability.
 
 ## Hyper paramters
 
