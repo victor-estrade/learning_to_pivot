@@ -10,7 +10,6 @@ import json
 import numpy as np
 
 import torch
-import torch.optim as optim
 import torch.nn.functional as F
 
 from sklearn.preprocessing import StandardScaler
@@ -27,7 +26,7 @@ from utils import to_numpy
 class Pivot():
     def __init__(self, net, adv_net, 
                 net_criterion, adv_criterion, trade_off,
-                net_optimizer, adv_optimizer, combined_optimizer,
+                net_optimizer, adv_optimizer,
                 n_net_pre_training_steps=10, n_adv_pre_training_steps=10,
                 n_steps=1000, n_recovery_steps=10,
                 batch_size=20, rescale=True, cuda=False, verbose=0):
@@ -38,7 +37,6 @@ class Pivot():
         self.trade_off = trade_off
         self.net_optimizer = net_optimizer
         self.adv_optimizer = adv_optimizer
-        self.combined_optimizer = combined_optimizer
         self.n_net_pre_training_steps = n_net_pre_training_steps
         self.n_adv_pre_training_steps = n_adv_pre_training_steps
         self.n_steps = n_steps
@@ -85,16 +83,7 @@ class Pivot():
         self.comb_loss = []
 
     def fit(self, X, y, z, sample_weight=None):
-        X = to_numpy(X)
-        y = to_numpy(y)
-        z = to_numpy(z)
-        # Preprocessing
-        X = self.scaler.fit_transform(X)
-        # to cuda friendly types
-        X = X.astype(np.float32)
-        z = z.astype(np.float32)
-        y = y.astype(np.int64)
-
+        X, y, z = self._prepare(X, y, z)
         # Pre-training classifier
         net_generator = EpochShuffle(X, y, batch_size=self.batch_size)
         self._fit_net(net_generator, self.n_net_pre_training_steps)  # pre-training
@@ -107,6 +96,20 @@ class Pivot():
         comb_generator = EpochShuffle(X, y, z, batch_size=self.batch_size)
         self._fit_combined(comb_generator, comb_generator, self.n_steps)
         return self
+
+    def _prepare(self, X, y, z):
+        X = to_numpy(X)
+        y = to_numpy(y)
+        z = to_numpy(z)
+        # Preprocessing
+        if self.scaler is not None:
+            X = self.scaler.fit_transform(X)
+        # to cuda friendly types
+        X = X.astype(np.float32)
+        z = z.astype(np.float32).reshape(-1, 1)
+        y = y.astype(np.int64)
+        return X, y, z
+
 
     def _fit_net(self, generator, n_steps):
         self.net.train()  # train mode
@@ -125,7 +128,7 @@ class Pivot():
         self.adv_net.train()  # train mode
         for i, (X_batch, z_batch) in enumerate(islice(generator, n_steps)):
             X_batch = to_torch(X_batch, cuda=self.cuda_flag)
-            z_batch = to_torch(z_batch, cuda=self.cuda_flag).view(-1, 1)
+            z_batch = to_torch(z_batch, cuda=self.cuda_flag)
             self.adv_optimizer.zero_grad()  # zero-out the gradients because they accumulate by default
             y_pred = self.net.forward(X_batch)
             z_pred = self.adv_net.forward(y_pred)
@@ -140,16 +143,14 @@ class Pivot():
         for i, (X_batch, y_batch, z_batch) in enumerate(islice(generator, n_steps)):
             X_batch = to_torch(X_batch, cuda=self.cuda_flag)
             y_batch = to_torch(y_batch, cuda=self.cuda_flag)
-            z_batch = to_torch(z_batch, cuda=self.cuda_flag).view(-1, 1)
+            z_batch = to_torch(z_batch, cuda=self.cuda_flag)
             self.adv_optimizer.zero_grad()  # zero-out the gradients because they accumulate by default
             y_pred = self.net.forward(X_batch)
             z_pred = self.adv_net.forward(y_pred)
-            # net_loss = self.net_criterion(y_pred, y_batch)
+            net_loss = self.net_criterion(y_pred, y_batch)
             adv_loss = self.adv_criterion(z_pred, z_batch)
-            # loss = net_loss - (self.trade_off * adv_loss)
-            # loss = - loss # gradient ascent
-            loss = adv_loss
-            # self.adv_loss.append(loss.item())
+            loss = (self.trade_off * adv_loss) - net_loss
+            # loss = adv_loss
             loss.backward()  # compute gradients
             self.adv_optimizer.step()  # update params
         return self
@@ -160,8 +161,8 @@ class Pivot():
         for i, (X_batch, y_batch, z_batch) in enumerate(islice(generator, n_steps)):
             X_batch = to_torch(X_batch, cuda=self.cuda_flag)
             y_batch = to_torch(y_batch, cuda=self.cuda_flag)
-            z_batch = to_torch(z_batch, cuda=self.cuda_flag).view(-1, 1)
-            self.combined_optimizer.zero_grad()  # zero-out the gradients because they accumulate by default
+            z_batch = to_torch(z_batch, cuda=self.cuda_flag)
+            self.net_optimizer.zero_grad()  # zero-out the gradients because they accumulate by default
             y_pred = self.net.forward(X_batch)
             z_pred = self.adv_net.forward(y_pred)
             net_loss = self.net_criterion(y_pred, y_batch)
@@ -171,7 +172,7 @@ class Pivot():
             self.net_loss.append(adv_loss.item())
             self.comb_loss.append(loss.item())
             loss.backward()  # compute gradients
-            self.combined_optimizer.step()  # update params
+            self.net_optimizer.step()  # update params
             # Adversarial recovery
             self._fit_recovery(recovery_generator, self.n_recovery_steps)
         return self
@@ -208,6 +209,48 @@ class Pivot():
         self.scaler = joblib.load(path)
         return self
 
+
+class PivotBinaryClassifier(Pivot):
+
+    def _prepare(self, X, y, z):
+        X = to_numpy(X)
+        y = to_numpy(y)
+        z = to_numpy(z)
+        # Preprocessing
+        if self.scaler is not None:
+            X = self.scaler.fit_transform(X)
+        # to cuda friendly types
+        X = X.astype(np.float32)
+        z = z.astype(np.float32).reshape(-1, 1)
+        y = y.astype(np.float32).reshape(-1, 1)
+        return X, y, z
+
+
+    def predict(self, X):
+        proba = self.predict_proba(X)
+        y_pred = np.argmax(proba, axis=1)
+        return y_pred
+
+    def predict_proba(self, X):
+        X = to_numpy(X)
+        if self.scaler is not None :
+            X = self.scaler.transform(X)
+        proba_s = self._predict_proba(X)
+        proba_b = 1-proba_s
+        proba = np.concatenate((proba_b, proba_s), axis=1)
+        return proba
+
+    def _predict_proba(self, X):
+        y_proba = []
+        self.net.eval()  # evaluation mode
+        for X_batch in OneEpoch(X, batch_size=self.batch_size):
+            X_batch = X_batch.astype(np.float32)
+            with torch.no_grad():
+                X_batch = to_torch(X_batch, cuda=self.cuda_flag)
+                proba_batch = torch.sigmoid(self.net.forward(X_batch)).cpu().data.numpy()
+            y_proba.extend(proba_batch)
+        y_proba = np.array(y_proba)
+        return y_proba
 
 
 class PivotClassifier(Pivot):
