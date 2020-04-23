@@ -26,8 +26,16 @@ Results are saved in the `output` directory
 `pivot.py` contains the training algorithm. It depends on `minibatch.py` to split given data.
 
 
-# TODO
+# Notes
 
-- Use a mixture density network with 5 gaussians like in the notebook :
-	https://github.com/glouppe/paper-learning-to-pivot/blob/master/code/Toy.ipynb
-- Use same hyper-parameters as in the paper
+## Mixture density networks
+
+Using a mixture density network with 5 gaussians as adversarials leads to NaN during training.
+Did not figured out why/how.
+
+A simple Mean square error regressor is used instead for stability.
+
+## Hyper paramters
+
+Hyper parameters are different from the original paper but are chosen to give similar plot.
+
