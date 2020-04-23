@@ -19,6 +19,7 @@ To run an experiment from root dir :
 - `python -m run.pivot` runs the same neural net with adversarial training
 - `python -m run.gradient_boost` runs sklearn's GradientBoostingClassifier
 
+Results are saved in the `output` directory
 
 ## Extract pivot code
 
