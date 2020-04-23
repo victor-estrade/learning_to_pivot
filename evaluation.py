@@ -42,7 +42,7 @@ def evaluate_neural_net(model, prefix='', suffix='', model_name='anonymous', dir
     losses = model.get_losses()
     plot_losses(losses, title=model_name, directory=directory)
     for loss_name, loss_values in losses.items():
-        plot_losses({loss_name: loss_values}, title=model_name, directory=directory, fname=f"{loss_name}.png")
+        plot_losses({loss_name: loss_values}, title=f"{loss_name} -- {model_name}", directory=directory, fname=f"{loss_name}.png")
     results = {loss_name: loss_values[-1] for loss_name, loss_values in losses.items() if loss_values}
     return results
 
