@@ -30,7 +30,7 @@ Results are saved in the `output` directory
 
 ## Mixture density networks
 
-Using a mixture density network with 5 gaussians as adversarials leads to NaN during training.
+Using a mixture density network with 5 gaussians as adversarials leads to NaN during testing.
 Did not figured out why/how.
 
 A simple Mean square error regressor is used instead for stability.
