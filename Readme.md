@@ -5,6 +5,7 @@ Trying to reproduce the results from the "Learning to Pivot" paper : https://arx
 
 # TODO
 
-Use a mixture density network with 5 gaussians as in the notebook.
+Use a mixture density network with 5 gaussians like in the notebook :
+https://github.com/glouppe/paper-learning-to-pivot/blob/master/code/Toy.ipynb
 
 
