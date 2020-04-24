@@ -34,7 +34,7 @@ from evaluation import evaluate_pivotal
 
 SEED = 42
 N_CV_ITER = 3
-TRADE_OFF = 50.0
+TRADE_OFF = 1.0
 DIRECTORY = os.path.join(OUT_DIRECTORY, f"pivot_mdn-{TRADE_OFF}")
 
 def main():
@@ -76,16 +76,17 @@ def run(i_cv):
     adv_criterion = ADVLoss()
     
     # ADAM
-    # net_optimizer = optim.Adam(net.parameters(), lr=1e-3, betas=(0.5, 0.9))
-    # adv_optimizer = optim.Adam(adv_net.parameters(), lr=1e-3, betas=(0.5, 0.9))
+    # Reducing optimizer inertia with lower beta1 and beta2 help with density network
+    net_optimizer = optim.Adam(net.parameters(), lr=1e-3, betas=(0.5, 0.9))
+    adv_optimizer = optim.Adam(adv_net.parameters(), lr=1e-3, betas=(0.5, 0.9))
     # SGD
-    net_optimizer = optim.SGD(net.parameters(), lr=1e-3)
-    adv_optimizer = optim.SGD(adv_net.parameters(), lr=1e-3)
+    # net_optimizer = optim.SGD(net.parameters(), lr=1e-3)
+    # adv_optimizer = optim.SGD(adv_net.parameters(), lr=1e-3)
 
     # model = PivotClassifier(net, adv_net, net_criterion, adv_criterion, TRADE_OFF, net_optimizer, adv_optimizer,
     model = PivotBinaryClassifier(net, adv_net, net_criterion, adv_criterion, TRADE_OFF, net_optimizer, adv_optimizer,
-                n_net_pre_training_steps=1000, n_adv_pre_training_steps=1000,
-                n_steps=2000, n_recovery_steps=1,
+                n_net_pre_training_steps=500, n_adv_pre_training_steps=3000,
+                n_steps=2000, n_recovery_steps=20,
                 batch_size=128, rescale=True, cuda=False, verbose=0)
     
     # Train Pivot
