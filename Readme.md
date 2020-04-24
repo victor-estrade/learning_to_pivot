@@ -16,10 +16,11 @@ https://github.com/glouppe/paper-learning-to-pivot/
 To run an experiment from root dir :
 
 - `python -m run.classifier` runs a neural network classifier without adversarial training
-- `python -m run.pivot` runs the same neural net with adversarial training
-- `python -m run.gradient_boost` runs sklearn's GradientBoostingClassifier
+- `python -m run.pivot` runs the same neural net with adversarial training againts a mean squared error regressor
+- `python -m run.pivot_mdn` runs the same neural net with adversarial training againts a 5 gaussian mixture density network regressor
+- `python -m run.gradient_boost` runs sklearn's GradientBoostingClassifier (easy to use and to train)
 
-Results are saved in the `output` directory
+Results are saved in the `output` directory which is automatically created.
 
 ## Extract pivot code
 
@@ -30,12 +31,21 @@ Results are saved in the `output` directory
 
 ## Mixture density networks
 
-Using a mixture density network with 5 gaussians as adversarials leads to NaN during testing.
-Did not figured out why/how.
+Using Adam optimizer with mixture density network requires to reduce beta values to reduce its inertia.
 
-A simpler Mean square error regressor is used instead for stability.
+## Mean squared error regressor
+
+A simpler Mean square error regressor is also available.
 
 ## Hyper paramters
 
-Hyper parameters are different from the original paper but are chosen to give similar plot.
+Hyper parameters are different from the original paper but are chosen to give almost similar plot.
+
+Do not hesitate to play with it.
+
+## Seed
+
+Script are seeded to help reproduce bugs or unwanted behaviour (especially NaN values).
+
+Do not hesitate to change the seeds although each scripts already runs multiple seeds.
 
