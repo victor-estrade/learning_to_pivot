@@ -69,6 +69,7 @@ class Pivot():
         losses = dict(net_loss=self.net_loss
                     , adv_loss=self.adv_loss
                     , comb_loss=self.comb_loss
+                    , recov_loss=self.recov_loss
                     )
         return losses
 
@@ -81,6 +82,7 @@ class Pivot():
         self.net_loss = []
         self.adv_loss = []
         self.comb_loss = []
+        self.recov_loss = []
 
     def fit(self, X, y, z, sample_weight=None):
         X, y, z = self._prepare(X, y, z)
@@ -133,7 +135,7 @@ class Pivot():
             y_pred = self.net.forward(X_batch)
             z_pred = self.adv_net.forward(y_pred)
             loss = self.adv_criterion(z_pred, z_batch)
-            # self.adv_loss.append(loss.item())
+            self.adv_loss.append(loss.item())
             loss.backward()  # compute gradients
             self.adv_optimizer.step()  # update params
         return self
@@ -147,10 +149,11 @@ class Pivot():
             self.adv_optimizer.zero_grad()  # zero-out the gradients because they accumulate by default
             y_pred = self.net.forward(X_batch)
             z_pred = self.adv_net.forward(y_pred)
-            net_loss = self.net_criterion(y_pred, y_batch)
+            # net_loss = self.net_criterion(y_pred, y_batch)
             adv_loss = self.adv_criterion(z_pred, z_batch)
-            loss = (self.trade_off * adv_loss) - net_loss
-            # loss = adv_loss
+            # loss = (self.trade_off * adv_loss) #- net_loss
+            loss = adv_loss
+            self.recov_loss.append(loss.item())
             loss.backward()  # compute gradients
             self.adv_optimizer.step()  # update params
         return self
@@ -169,7 +172,7 @@ class Pivot():
             adv_loss = self.adv_criterion(z_pred, z_batch)
             loss = net_loss - (self.trade_off * adv_loss)
             self.adv_loss.append(adv_loss.item())
-            self.net_loss.append(adv_loss.item())
+            self.net_loss.append(net_loss.item())
             self.comb_loss.append(loss.item())
             loss.backward()  # compute gradients
             self.net_optimizer.step()  # update params
