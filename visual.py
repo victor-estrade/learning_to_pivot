@@ -91,7 +91,7 @@ def plot_pivotal_distrib(decision_minus, decision_zero, decision_plus, title="no
         plt.hist(decision_minus, bins=50, density=1, histtype="step", label='z=0')
         plt.hist(decision_zero, bins=50, density=1, histtype="step", label='z=1')
         plt.hist(decision_plus, bins=50, density=1, histtype="step", label='z=2')
-        plt.ylim(0,4)
+        # plt.ylim(0,4)
         plt.title(title)
         plt.legend()
         plt.savefig(os.path.join(directory, fname))
