@@ -34,7 +34,7 @@ from evaluation import evaluate_pivotal
 
 SEED = 42
 N_CV_ITER = 3
-TRADE_OFF = 2.0
+TRADE_OFF = 1.0
 DIRECTORY = os.path.join(OUT_DIRECTORY, f"pivot_mdn-{TRADE_OFF}")
 
 def main():
