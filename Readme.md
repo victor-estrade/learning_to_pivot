@@ -38,7 +38,7 @@ Using Adam optimizer with mixture density network requires to reduce beta values
 
 A simpler Mean square error regressor is also available.
 
-## Hyper paramters
+## Hyper parameters
 
 Hyper parameters are different from the original paper but are chosen to give almost similar plot.
 
