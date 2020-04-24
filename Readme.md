@@ -24,7 +24,8 @@ Results are saved in the `output` directory which is automatically created.
 
 ## Extract pivot code
 
-`pivot.py` contains the training algorithm. It depends on `minibatch.py` to split given data.
+`pivot.py` contains the training algorithm. 
+It depends on `minibatch.py` to split given data and on `utils.py` to convert to/from numpy arrays to/from torch tensors.
 
 
 # Notes
