@@ -48,4 +48,3 @@ Do not hesitate to play with it.
 Script are seeded to help reproduce bugs or unwanted behaviour (especially NaN values).
 
 Do not hesitate to change the seeds although each scripts already runs multiple seeds.
-
